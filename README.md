@@ -2,7 +2,7 @@
 
 influxclean is an influxdb cleanup utility that includes the following maintenance jobs:
 
-* oldseries: drop series without specific data received for the last specified time
+* oldseries: drop series with no specific data received for the last specified time
 
 More maintenance jobs may be added in the future.
 
@@ -24,7 +24,7 @@ Currently only access through Influxdbv1 API is used.
   user = ""
   password = ""
   # drop series from all measurements for Windows servers
-  # without win_system data in telegraf db for three days
+  # with no win_system data in telegraf db for three days (72h)
   [[influxdb1.oldseries]]
     name = "Windows servers"
     # if databases is empty all databases are checked
@@ -40,7 +40,7 @@ Currently only access through Influxdbv1 API is used.
     drop_from_all = true
     # sleep period before jumping to the next database
     sleep_period = "0s"
-    # relative time windows to query for data in db (units: s, m, h)
+    # time windows (relative to now) to query for data in db
     # "0m", "0m" performs a search without time restriction
     history_window = ["0m", "0m"]
     current_window = ["72h", "1m"]
@@ -48,18 +48,25 @@ Currently only access through Influxdbv1 API is used.
 
 Environment variables specified with env_user and env_password take preference over user and password config entries.
 
-* Run influxclean in dryrun mode first to check results first and then run it with dryun mode disabled.
+If databases list is empty (\[]) the job will be launched against all databases.
+
+For oldseries job type, time windows are relative to the current time and are specified as duration (possible units: s, m, h). history_window is used to search historic series and current_window is used to search series with data currently received (from now-72h to now-1m in the example). Both queries take a list of tags values ("host" in the example), and the difference between them gives the series to drop.
+
+More than one influxdb1 config entry can be specified to launch cleanup jobs to different influxdb servers. Also more than one job can be configured for each influxdb1 entry.
+
+* Run influxclean in dry run mode first to check results first and then run it with dry run mode disabled to actually clean your database(s).
 
 # Quick test in your environment
 
 * Edit influxclean.conf file as needed (see above)
 
-* Run influxclean with --config argument using that file and dryrun mode enabled (default).
+* Run influxclean with --config argument using that file and dry run mode enabled (default).
 ```
 /path/to/influxclean --config /path/to/influxclean.conf
 ```
+Debug mode is enabled by default to let you see the action that would be taken with dry run mode disabled.
 
-* Check the output and if you see the expected results you may launch the cleanup from db.
+* Check the output and if you see the expected results you may launch the cleanup from your database(s).
 ```
 /path/to/influxclean --dryrun=false --config /path/to/influxclean.conf
 ```

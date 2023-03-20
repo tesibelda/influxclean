@@ -4,7 +4,7 @@
   env_user = "INFLUX_USER"
   env_password = "INFLUX_PWD"
   # drop series from all measurements for Windows servers
-  # without win_system data in telegraf db for three days
+  # with no win_system data in telegraf db for three days (72h)
   [[influxdb1.oldseries]]
     name = "Windows servers"
     # if databases is empty all databases are checked
@@ -20,7 +20,7 @@
     drop_from_all = true
     # sleep period before jumping to the next database
     sleep_period = "0s"
-    # relative time windows to query for data in db (units: s, m, h)
+    # time windows (relative to now) to query for data in db
     # "0m", "0m" performs a search without time restriction
     history_window = ["0m", "0m"]
     current_window = ["72h", "1m"]
