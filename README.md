@@ -29,17 +29,17 @@ Currently only access through Influxdbv1 API is used.
     name = "Windows servers"
     # if databases is empty all databases are checked
     databases = ["telegraf"]
-	# retention policy, measurement and field to use in queries
+    # retention policy, measurement and field to use in queries
     rp = "autogen"
     measurement = "win_system"
     field = "Processor_Queue_Length"
-	# tags to detect old series (no more than two)
+    # tags to detect old series (no more than two)
     tags = ["host"]
     # if drop_from_all is true series are dropped from all
     # measurements, otherwise (default) only from measurement
     drop_from_all = true
-	# sleep period before jumping to the next database
-	sleep_period = "0s"
+    # sleep period before jumping to the next database
+    sleep_period = "0s"
     # relative time windows to query for data in db (units: s, m, h)
     # "0m", "0m" performs a search without time restriction
     history_window = ["0m", "0m"]
