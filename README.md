@@ -21,6 +21,8 @@ Currently only access through Influxdbv1 API is used.
   url = "http://localhost:8086"
   env_user = "INFLUX_USER"
   env_password = "INFLUX_PWD"
+  user = ""
+  password = ""
   # drop series from all measurements for Windows servers
   # without win_system data in telegraf db for three days
   [[influxdb1.oldseries]]
@@ -43,6 +45,8 @@ Currently only access through Influxdbv1 API is used.
     history_window = ["0m", "0m"]
     current_window = ["72h", "1m"]
 ```
+
+Environment variables specified with env_user and env_password take preference over user and password config entries.
 
 * Run influxclean in dryrun mode first to check results first and then run it with dryun mode disabled.
 
@@ -71,7 +75,8 @@ time="2023/03/17 15:44:26" level=debug msg="querying: SHOW TAG VALUES FROM win_s
 time="2023/03/17 15:44:26" level=debug msg="querying: SELECT host FROM (SELECT first(Processor_Queue_Length), host::tag AS host FROM win_system WHERE (time > now() - 72h AND time < now() - 1m) GROUP BY host)"
 time="2023/03/17 15:44:26" level=info msg="About to drop series for tag host with 2 values"
 time="2023/03/17 15:44:26" level=debug msg="dropping: DROP SERIES WHERE host='myawsserver01' OR host='myserver02'"
-time="2023/03/17 15:44:27" level=info msg="Jobs completed"```
+time="2023/03/17 15:44:27" level=info msg="Jobs completed"
+```
 
 # Build Instructions
 
