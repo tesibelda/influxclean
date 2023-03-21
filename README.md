@@ -1,16 +1,19 @@
 # influxclean
 
-influxclean is an influxdb cleanup utility that includes the following maintenance jobs:
+influxclean is an influxdb cleanup utility that allows you to run the following job types:
 
-* oldseries: drop series with no specific data received for the last specified time
+* oldseries: drop series with no specific data received for the specified time
 
-More maintenance jobs may be added in the future.
+More job types may be added in the future.
+
+**Warning**
+Removal of data from the database cannot be undone. It is strongly suggested to take a backup before using this tool. Be cautius and double-check the results using dry run mode.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tesibelda/influxclean/raw/master/LICENSE)
 
 # Compatibility
 
-Currently only access through Influxdbv1 API is used. 
+Currently access to the database is only done using Influxdbv1 API. 
 
 # Configuration
 
@@ -76,11 +79,11 @@ Debug mode is enabled by default to let you see the action that would be taken w
 ```plain
 time="2023/03/17 15:44:26" level=info msg="Connecting to influxdb1 at http://localhost:8086 with dry run DISABLED"
 time="2023/03/17 15:44:26" level=debug msg="Connected to http://localhost:8086 version 1.8.10"
-time="2023/03/17 15:44:26" level=info msg="Old series job Windows servers..."
+time="2023/03/17 15:44:26" level=info msg="oldseries job Windows servers..."
 time="2023/03/17 15:44:26" level=info msg="Working on database telegraf"
 time="2023/03/17 15:44:26" level=debug msg="querying: SHOW TAG VALUES FROM win_system WITH KEY=host"
 time="2023/03/17 15:44:26" level=debug msg="querying: SELECT host FROM (SELECT first(Processor_Queue_Length), host::tag AS host FROM win_system WHERE (time > now() - 72h AND time < now() - 1m) GROUP BY host)"
-time="2023/03/17 15:44:26" level=info msg="About to drop series for tag host with 2 values"
+time="2023/03/17 15:44:26" level=info msg="About to drop series from telegraf db for tag host with 2 values"
 time="2023/03/17 15:44:26" level=debug msg="dropping: DROP SERIES WHERE host='myawsserver01' OR host='myserver02'"
 time="2023/03/17 15:44:27" level=info msg="Jobs completed"
 ```
