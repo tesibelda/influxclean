@@ -19,15 +19,15 @@ var Version string = ""
 
 func main() {
 	var (
-		cfgfile string
 		f       *os.File
+		cfgfile string
 		ecode   int
 		err     error
 		dryrun  bool
 		debug   bool
 	)
 
-	// parameters
+	// cli parameters
 	flag.BoolVar(&debug, "debug", true, "display queries and results")
 	flag.BoolVar(&dryrun, "dryrun", true, "dry run does not drop any series")
 	flag.StringVar(&cfgfile, "config", "influxclean.toml", "config file")
@@ -43,7 +43,7 @@ func main() {
 		fmt.Println("Error opening configuration file:", err)
 		os.Exit(1)
 	}
-	var cfg = &config.InfluxCleanConfig{}
+	var cfg = config.NewInfluxCleanConfig()
 	if err = cfg.ReadFile(f); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not load config in file %s: %s", cfgfile, err.Error())
 		os.Exit(1)

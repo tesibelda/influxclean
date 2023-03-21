@@ -41,6 +41,13 @@ type OldSeriesInfo struct {
 	Current_window []string
 }
 
+var ErrorString_ParseFailed = "Configuration parse failed"
+
+func NewInfluxCleanConfig() *InfluxCleanConfig {
+	var c = &InfluxCleanConfig{}
+	return c
+}
+
 // ReadFile reads a config reader, expands env variables and parse config
 func (c *InfluxCleanConfig) ReadFile(f io.Reader) error {
 	var err error
@@ -48,11 +55,24 @@ func (c *InfluxCleanConfig) ReadFile(f io.Reader) error {
 	if err = toml.NewDecoder(f).Decode(c); err != nil {
 		return err
 	}
-	return parseConfig(c)
+	c.defaultOldSeriesConfig()
+	return c.parseConfig()
+}
+
+// defaultOldSeriesConfig sets default values if not provided
+func (c *InfluxCleanConfig) defaultOldSeriesConfig() {
+	for i := range c.Influxdb1 {
+		for j := range c.Influxdb1[i].Oldseries {
+			var job = &c.Influxdb1[i].Oldseries[j]
+			job.Sleep_period = defaultDuration(job.Sleep_period)
+			job.History_window = defaultWindowDuration(job.History_window)
+			job.Current_window = defaultWindowDuration(job.Current_window)
+		}
+	}
 }
 
 // parseConfig parses an InfluxCleanConfig's contents
-func parseConfig(c *InfluxCleanConfig) error {
+func (c *InfluxCleanConfig) parseConfig() error {
 	var err error
 
 	for i, inf := range c.Influxdb1 {
@@ -74,10 +94,15 @@ func parseOldSeriesConfig(inf Influxdb1Info, c *InfluxCleanConfig) error {
 	var err error
 	for _, job := range inf.Oldseries {
 		if len(job.Tags) == 0 || len(job.Tags) > 2 {
-			return fmt.Errorf("Only one or two tags clean jobs are possible")
+			return fmt.Errorf("%s. Only one or two tags clean jobs are possible",
+				ErrorString_ParseFailed,
+			)
 		}
 		if _, err = time.ParseDuration(job.Sleep_period); err != nil {
-			return err
+			return fmt.Errorf("%s. Sleep_period field not parsed: %v",
+				ErrorString_ParseFailed,
+				err,
+			)
 		}
 		if err = parseWindow(job.History_window, "History"); err != nil {
 			return err
@@ -94,16 +119,44 @@ func parseWindow(w []string, desc string) error {
 	var t, tf time.Duration
 	var err error
 	if len(w) > 2 {
-		return fmt.Errorf("%s and current window should include two durations", desc)
+		return fmt.Errorf("%s. %s and current window should include two durations",
+			ErrorString_ParseFailed,
+			desc,
+		)
 	}
 	for k := 0; k < len(w); k++ {
 		if _, err = time.ParseDuration(w[k]); err != nil {
-			return err
+			return fmt.Errorf("%s. %s time window could not be parsed: %v",
+				ErrorString_ParseFailed,
+				desc,
+				err,
+			)
 		}
 		if k == 1 && t.Seconds() > tf.Seconds() {
-			return fmt.Errorf("%s relative times are not from older to newer", desc)
+			return fmt.Errorf("%s. %s relative times are not from older to newer",
+				ErrorString_ParseFailed,
+				desc,
+			)
 		}
 		tf = t
 	}
 	return err
+}
+
+func defaultDuration(s string) string {
+	if len(s) == 0 {
+		s = "0s"
+	}
+	return s
+}
+
+func defaultWindowDuration(w []string) []string {
+	var zw = []string{"0s", "0s"}
+	for k := range w {
+		w[k] = defaultDuration(w[k])
+	}
+	if len(w) == 0 {
+		w = zw
+	}
+	return w
 }

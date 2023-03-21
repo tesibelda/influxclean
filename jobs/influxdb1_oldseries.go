@@ -77,7 +77,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		remdata = sliceplus.Difference(hdata, cdata)
 		switch len(remdata) {
 		case 0:
-			l.Infof("No series to drop where found")
+			l.Infof("No series where found to drop")
 		default:
 			l.Infof("About to drop series for tag %s with %d values", tag, len(remdata))
 		}
@@ -130,14 +130,18 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 			return err
 		}
 		remdata = sliceplus.Difference(hdata, cdata)
-		if len(remdata) > 0 {
+		switch len(remdata) {
+		case 0:
+			l.Infof("No series where found to drop")
+		default:
 			l.Infof("About to drop series for tags %s and %s with %d values",
 				tag1,
 				tag2,
 				len(remdata),
 			)
 		}
-		for _, ch := range sliceplus.ChunkSlice(remdata, 60) {
+
+		for _, ch := range sliceplus.ChunkSlice(remdata, 40) {
 			if oc.Drop_from_all {
 				m = ""
 			}

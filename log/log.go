@@ -1,3 +1,8 @@
+// influxclean log package provides log abstraction
+//
+// Author: Tesifonte Belda
+// License: The MIT License (MIT)
+
 package log
 
 import (
