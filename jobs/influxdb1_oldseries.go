@@ -19,7 +19,7 @@ func runInfluxdb1OldSeries(
 	inf config.Influxdb1Info,
 	dryrun bool,
 ) error {
-	var err, worsterr error
+	var err, lasterr error
 	for _, job := range inf.Oldseries {
 		if len(job.Databases) == 0 {
 			job.Databases, err = ic.QueryShowDatabases()
@@ -36,10 +36,10 @@ func runInfluxdb1OldSeries(
 		}
 		if err != nil {
 			l.Errorf("Error runing job %s: %v", job.Name, err)
-			worsterr = err
+			lasterr = err
 		}
 	}
-	return worsterr
+	return lasterr
 }
 
 // runInfl1OldSeries1Dim runs all oldseries job of influxdb1 type and one tag dimension
@@ -49,7 +49,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		tag, m                string
 		hwb, hwe, cwb, cwe    string
 		sl                    time.Duration
-		err                   error
+		err, lasterr         error
 	)
 
 	tag = oc.Tags[0]
@@ -65,14 +65,16 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		l.Infof("Working on database %s", db)
 		m = oc.Measurement
 		if hdata, err = ic.Query1Dimension(db, oc.Rp, m, oc.Field, tag, hwb, hwe); err != nil {
-			return err
+			lasterr = err
+			continue
 		}
 		if len(hdata) == 0 {
 			l.Infof("No historic series found for job %s", oc.Name)
 			continue
 		}
 		if cdata, err = ic.Query1Dimension(db, oc.Rp, m, oc.Field, tag, cwb, cwe); err != nil {
-			return err
+			lasterr = err
+			continue
 		}
 		remdata = sliceplus.Difference(hdata, cdata)
 		switch len(remdata) {
@@ -86,11 +88,12 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 				m = ""
 			}
 			if err = ic.DropSeries1Dimension(db, m, tag, ch); err != nil {
-				return err
+				lasterr = err
+				continue
 			}
 		}
 	}
-	return err
+	return lasterr
 }
 
 // runInfl1OldSeries2Dims runs all oldseries job of influxdb1 type and two tag dimensions
