@@ -24,10 +24,10 @@ func runInfluxdb1OldSeries(
 		if len(job.Databases) == 0 {
 			job.Databases, err = ic.QueryShowDatabases()
 			if err != nil {
-				l.Errorf("Error runing job %s: %v", job.Name, err)
+				l.Errorf("Error listing databases while runing oldseries job %s: %v", job.Name, err)
 			}
 		}
-		l.Infof("Old series job %s...", job.Name)
+		l.Infof("oldseries job %s...", job.Name)
 		switch len(job.Tags) {
 		case 1:
 			err = runInfl1OldSeries1Dim(ic, job)
@@ -35,7 +35,7 @@ func runInfluxdb1OldSeries(
 			err = runInfl1OldSeries2Dims(ic, job)
 		}
 		if err != nil {
-			l.Errorf("Error runing job %s: %v", job.Name, err)
+			l.Errorf("Error runing oldseries job %s: %v", job.Name, err)
 			lasterr = err
 		}
 	}
@@ -69,7 +69,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 			continue
 		}
 		if len(hdata) == 0 {
-			l.Infof("No historic series found for job %s", oc.Name)
+			l.Infof("No historic series found for oldseries job %s in db %s", oc.Name, db)
 			continue
 		}
 		if cdata, err = ic.Query1Dimension(db, oc.Rp, m, oc.Field, tag, cwb, cwe); err != nil {
@@ -79,9 +79,9 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		remdata = sliceplus.Difference(hdata, cdata)
 		switch len(remdata) {
 		case 0:
-			l.Infof("No series where found to drop")
+			l.Infof("No series where found to drop from db %s", db)
 		default:
-			l.Infof("About to drop series for tag %s with %d values", tag, len(remdata))
+			l.Infof("About to drop series from db %s for tag %s with %d values", db, tag, len(remdata))
 		}
 		for _, ch := range sliceplus.ChunkSlice(remdata, 60) {
 			if oc.Drop_from_all {
@@ -104,7 +104,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 		tag1, tag2, m         string
 		hwb, hwe, cwb, cwe    string
 		sl                    time.Duration
-		err                   error
+		err, lasterr          error
 	)
 
 	tag1 = oc.Tags[0]
@@ -122,22 +122,25 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 		m = oc.Measurement
 		hdata, err = ic.Query2Dimensions(db, oc.Rp, m, oc.Field, tag1, tag2, hwb, hwe)
 		if err != nil {
-			return err
+			lasterr = err
+			continue
 		}
 		if len(hdata) == 0 {
-			l.Infof("No historic series found for job %s", oc.Name)
+			l.Infof("No historic series found for oldseries job %s in db %s", oc.Name, db)
 			continue
 		}
 		cdata, err = ic.Query2Dimensions(db, oc.Rp, m, oc.Field, tag1, tag2, cwb, cwe)
 		if err != nil {
-			return err
+			lasterr = err
+			continue
 		}
 		remdata = sliceplus.Difference(hdata, cdata)
 		switch len(remdata) {
 		case 0:
-			l.Infof("No series where found to drop")
+			l.Infof("No series where found to drop from db %s", db)
 		default:
-			l.Infof("About to drop series for tags %s and %s with %d values",
+			l.Infof("About to drop series from db %s for tags %s and %s with %d values",
+				db,
 				tag1,
 				tag2,
 				len(remdata),
@@ -150,9 +153,10 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 			}
 			vals1, vals2 = sliceplus.Split2Dims(ch, influxdb1.Separator)
 			if err = ic.DropSeries2Dimensions(db, m, tag1, vals1, tag2, vals2); err != nil {
-				return err
+				lasterr = err
+				continue
 			}
 		}
 	}
-	return err
+	return lasterr
 }
