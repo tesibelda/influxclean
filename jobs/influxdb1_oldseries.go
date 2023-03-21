@@ -49,11 +49,11 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		tag, m                string
 		hwb, hwe, cwb, cwe    string
 		sl                    time.Duration
-		err, lasterr         error
+		err, lasterr          error
 	)
 
 	tag = oc.Tags[0]
-	sl, _ = time.ParseDuration(oc.Sleep_period)
+	sl, _ = time.ParseDuration(oc.Sleep_duration)
 	hwb = oc.History_window[0]
 	hwe = oc.History_window[1]
 	cwb = oc.Current_window[0]
@@ -109,7 +109,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 
 	tag1 = oc.Tags[0]
 	tag2 = oc.Tags[1]
-	sl, _ = time.ParseDuration(oc.Sleep_period)
+	sl, _ = time.ParseDuration(oc.Sleep_duration)
 	hwb = oc.History_window[0]
 	hwe = oc.History_window[1]
 	cwb = oc.Current_window[0]

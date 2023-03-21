@@ -36,7 +36,7 @@ type OldSeriesInfo struct {
 	Field          string
 	Tags           []string
 	Drop_from_all  bool
-	Sleep_period   string
+	Sleep_duration string
 	History_window []string
 	Current_window []string
 }
@@ -64,7 +64,7 @@ func (c *InfluxCleanConfig) defaultOldSeriesConfig() {
 	for i := range c.Influxdb1 {
 		for j := range c.Influxdb1[i].Oldseries {
 			var job = &c.Influxdb1[i].Oldseries[j]
-			job.Sleep_period = defaultDuration(job.Sleep_period)
+			job.Sleep_duration = defaultDuration(job.Sleep_duration)
 			job.History_window = defaultWindowDuration(job.History_window)
 			job.Current_window = defaultWindowDuration(job.Current_window)
 		}
@@ -98,8 +98,8 @@ func parseOldSeriesConfig(inf Influxdb1Info, c *InfluxCleanConfig) error {
 				ErrorString_ParseFailed,
 			)
 		}
-		if _, err = time.ParseDuration(job.Sleep_period); err != nil {
-			return fmt.Errorf("%s. Sleep_period field not parsed: %v",
+		if _, err = time.ParseDuration(job.Sleep_duration); err != nil {
+			return fmt.Errorf("%s. Sleep_duration field could not be parsed: %v",
 				ErrorString_ParseFailed,
 				err,
 			)

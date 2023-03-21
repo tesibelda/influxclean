@@ -38,8 +38,8 @@ Currently only access through Influxdbv1 API is used.
     # if drop_from_all is true series are dropped from all
     # measurements, otherwise (default) only from measurement
     drop_from_all = true
-    # sleep period before jumping to the next database
-    sleep_period = "0s"
+    # sleep duration time before jumping to the next database
+    sleep_duration = "0s"
     # time windows (relative to now) to query for data in db
     # "0m", "0m" performs a search without time restriction
     history_window = ["0m", "0m"]
