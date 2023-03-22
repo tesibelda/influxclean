@@ -3,6 +3,8 @@
   url = "http://localhost:8086"
   env_user = "INFLUX_USER"
   env_password = "INFLUX_PWD"
+  ## Use TLS but skip chain & host verification (default false)
+  insecure_skip_verify = false
   # drop series from all measurements for Windows servers
   # with no win_system data in telegraf db for three days (72h)
   [[influxdb1.oldseries]]

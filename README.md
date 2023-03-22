@@ -26,6 +26,8 @@ Currently access to the database is only done using Influxdbv1 API.
   env_password = "INFLUX_PWD"
   user = ""
   password = ""
+  ## Use TLS but skip chain & host verification (default false)
+  insecure_skip_verify = false
   # drop series from all measurements for Windows servers
   # with no win_system data in telegraf db for three days (72h)
   [[influxdb1.oldseries]]
@@ -59,7 +61,7 @@ More than one influxdb1 config entry can be specified to launch cleanup jobs to 
 
 * Run influxclean in dry run mode first to check results first and then run it with dry run mode disabled to actually clean your database(s).
 
-# Quick test in your environment
+# Running in your environment
 
 * Edit influxclean.conf file as needed (see above)
 
@@ -69,10 +71,12 @@ More than one influxdb1 config entry can be specified to launch cleanup jobs to 
 ```
 Debug mode is enabled by default to let you see the action that would be taken with dry run mode disabled.
 
-* Check the output and if you see the expected results you may launch the cleanup from your database(s).
+* Check the output and if you see the expected results, you may launch the cleanup from your database(s). Anyway remember the warning above.
 ```
 /path/to/influxclean --dryrun=false --config /path/to/influxclean.conf
 ```
+
+You can disable debug logging by adding the flag --debug=false to the command.
 
 # Example output
 

@@ -20,12 +20,13 @@ type InfluxCleanConfig struct {
 }
 
 type Influxdb1Info struct {
-	Url          string
-	Env_user     string
-	Env_password string
-	User         string
-	Password     string
-	Oldseries    []OldSeriesInfo
+	Url                  string
+	Env_user             string
+	Env_password         string
+	User                 string
+	Password             string
+	Insecure_skip_verify bool
+	Oldseries            []OldSeriesInfo
 }
 
 type OldSeriesInfo struct {

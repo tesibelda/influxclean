@@ -16,23 +16,24 @@ import (
 )
 
 type Influxdb1Client struct {
-	con    client.Client
-	Log    *log.Logger
-	url    string
-	user   string
-	dryrun bool
+	con         client.Client
+	Log         *log.Logger
+	url         string
+	user        string
+	skip_verify bool
+	dryrun      bool
 }
 
 var Separator = "#"
 
 // Open opens a connection to the provided influxdb1
-func (ic *Influxdb1Client) Open(url, user, password string, dry bool) error {
+func (ic *Influxdb1Client) Open(url, user, password string, skip bool, dry bool) error {
 	var err error
 	var conf = client.HTTPConfig{
 		Addr:               url,
 		Username:           user,
 		Password:           password,
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: skip,
 	}
 
 	ic.url = url
