@@ -81,7 +81,24 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		case 0:
 			l.Infof("No series where found to drop from %s db", db)
 		default:
-			l.Infof("About to drop series from %s db for tag %s with %d values", db, tag, len(remdata))
+			var about = "About to drop series from"
+			switch oc.Drop_from_all {
+			case true:
+				l.Infof("%s %s db for tag %s with %d values",
+					about,
+					db,
+					tag,
+					len(remdata),
+				)
+			default:
+				l.Infof("%s measurement %s in %s db for tag %s with %d values",
+					about,
+					m,
+					db,
+					tag,
+					len(remdata),
+				)
+			}
 		}
 		for _, ch := range sliceplus.ChunkSlice(remdata, 60) {
 			if oc.Drop_from_all {
@@ -139,12 +156,26 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 		case 0:
 			l.Infof("No series where found to drop from %s db", db)
 		default:
-			l.Infof("About to drop series from %s db for tags %s and %s with %d values",
-				db,
-				tag1,
-				tag2,
-				len(remdata),
-			)
+			var about = "About to drop series from"
+			switch oc.Drop_from_all {
+			case true:
+				l.Infof("%s %s db for tags %s and %s with %d values",
+					about,
+					db,
+					tag1,
+					tag2,
+					len(remdata),
+				)
+			default:
+				l.Infof("%s measurement %s in %s db for tags %s and %s with %d values",
+					about,
+					m,
+					db,
+					tag1,
+					tag2,
+					len(remdata),
+				)
+			}
 		}
 
 		for _, ch := range sliceplus.ChunkSlice(remdata, 40) {
