@@ -268,7 +268,7 @@ func rowSelectSlice(row models.Row) []string {
 	var record string
 	for _, point := range row.Values {
 		for j, column := range row.Columns {
-			if string(column) != "time" {
+			if string(column) != "time" && point[j] != nil {
 				var actual = point[j].(string)
 				switch len(record) {
 				case 0:
