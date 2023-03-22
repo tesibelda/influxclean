@@ -20,7 +20,6 @@ type Influxdb1Client struct {
 	Log         *log.Logger
 	url         string
 	user        string
-	skip_verify bool
 	dryrun      bool
 }
 
