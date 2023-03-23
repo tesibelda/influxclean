@@ -16,11 +16,11 @@ import (
 )
 
 type Influxdb1Client struct {
-	con         client.Client
-	Log         *log.Logger
-	url         string
-	user        string
-	dryrun      bool
+	con    client.Client
+	Log    *log.Logger
+	url    string
+	user   string
+	dryrun bool
 }
 
 var Separator = "#"
@@ -227,7 +227,7 @@ func (ic *Influxdb1Client) DropSeries2Dimensions(db, m, dim1 string, vals1 []str
 	}
 	for i, val1 := range vals1 {
 		if i > 0 {
-			query = fmt.Sprintf("%s OR ", query)
+			query = fmt.Sprintf("%s OR", query)
 		}
 		query = fmt.Sprintf("%s (%s='%s' AND %s='%s')", query, dim1, val1, dim2, vals2[i])
 	}
@@ -241,7 +241,7 @@ func (ic *Influxdb1Client) DropSeries2Dimensions(db, m, dim1 string, vals1 []str
 			return fmt.Errorf("Dropping series failed: %s", response.Error())
 		}
 	case true:
-		ic.Log.Info("dryrun mode on, drop skipped")
+		ic.Log.Debug("dryrun mode on, drop skipped")
 	}
 	return err
 }
