@@ -24,7 +24,10 @@ func runInfluxdb1OldSeries(
 		if len(job.Databases) == 0 {
 			job.Databases, err = ic.QueryShowDatabases()
 			if err != nil {
-				l.Errorf("Error listing databases while runing oldseries job %s: %v", job.Name, err)
+				l.Errorf("Error listing databases while runing oldseries job %s: %v",
+					job.Name,
+					err,
+				)
 			}
 		}
 		l.Infof("oldseries job %s...", job.Name)
@@ -64,7 +67,8 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 		}
 		l.Infof("Working on database %s", db)
 		m = oc.Measurement
-		if hdata, err = ic.Query1Dimension(db, oc.Rp, m, oc.Field, tag, hwb, hwe); err != nil {
+		hdata, err = ic.Query1Dim(db, oc.Rp, m, oc.Field, tag, oc.Filter, hwb, hwe)
+		if err != nil {
 			lasterr = err
 			continue
 		}
@@ -72,7 +76,8 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 			l.Infof("No historic series found for oldseries job %s in %s db", oc.Name, db)
 			continue
 		}
-		if cdata, err = ic.Query1Dimension(db, oc.Rp, m, oc.Field, tag, cwb, cwe); err != nil {
+		cdata, err = ic.Query1Dim(db, oc.Rp, m, oc.Field, tag, oc.Filter, cwb, cwe)
+		if err != nil {
 			lasterr = err
 			continue
 		}
@@ -104,7 +109,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 			if oc.Drop_from_all {
 				m = ""
 			}
-			if err = ic.DropSeries1Dimension(db, m, tag, ch); err != nil {
+			if err = ic.DropSeries1Dim(db, m, tag, ch); err != nil {
 				lasterr = err
 				continue
 			}
@@ -137,7 +142,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 		}
 		l.Infof("Working on database %s", db)
 		m = oc.Measurement
-		hdata, err = ic.Query2Dimensions(db, oc.Rp, m, oc.Field, tag1, tag2, hwb, hwe)
+		hdata, err = ic.Query2Dims(db, oc.Rp, m, oc.Field, tag1, tag2, oc.Filter, hwb, hwe)
 		if err != nil {
 			lasterr = err
 			continue
@@ -146,7 +151,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 			l.Infof("No historic series found for oldseries job %s in %s db", oc.Name, db)
 			continue
 		}
-		cdata, err = ic.Query2Dimensions(db, oc.Rp, m, oc.Field, tag1, tag2, cwb, cwe)
+		cdata, err = ic.Query2Dims(db, oc.Rp, m, oc.Field, tag1, tag2, oc.Filter, cwb, cwe)
 		if err != nil {
 			lasterr = err
 			continue
@@ -183,7 +188,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 				m = ""
 			}
 			vals1, vals2 = sliceplus.Split2Dims(ch, influxdb1.Separator)
-			if err = ic.DropSeries2Dimensions(db, m, tag1, vals1, tag2, vals2); err != nil {
+			if err = ic.DropSeries2Dims(db, m, tag1, vals1, tag2, vals2); err != nil {
 				lasterr = err
 				continue
 			}

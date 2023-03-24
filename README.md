@@ -1,8 +1,8 @@
 # influxclean
 
-influxclean is an influxdb cleanup utility that allows you to run the following job types:
+influxclean is an [InfluxDB](https://github.com/influxdata/influxdb) cleanup utility that allows you to run the following job types:
 
-* oldseries: drop series with no specific data received for the specified time
+* oldseries: drop series with no specific data received for the specified time. Useful when you want to drop specific not active series before the retention policy applies.
 
 More job types may be added in the future.
 
@@ -38,6 +38,8 @@ Currently access to the database is only done using Influxdbv1 API.
     rp = "autogen"
     measurement = "win_system"
     field = "Processor_Queue_Length"
+	# additional filtering clause to use in queries (tag='value')
+	filter = ""
     # tags to detect old series (no more than two)
     tags = ["host"]
     # if drop_from_all is true series are dropped from all
@@ -55,7 +57,7 @@ Environment variables specified with env_user and env_password take preference o
 
 If databases list is empty (\[]) the job will be launched against all databases.
 
-For oldseries job type, time windows are relative to the current time and are specified as duration (possible units: s, m, h). history_window is used to search historic series and current_window is used to search series with data currently received (from now-72h to now-1m in the example). Both queries take a list of tags values ("host" in the example), and the difference between them gives the series to drop.
+For oldseries job type, time windows are relative to the current time and are specified as duration (possible units: s, m, h). history_window is used to search historic series and current_window is used to search series with data currently received (from now-72h to now-1m in the example). Both queries take a list of tags values ("host" in the example), and the difference between them gives the series to drop. A filter can be added to work on more specific series using an expression like in [where clause](https://docs.influxdata.com/influxdb/v1.8/query_language/explore-schema/#show-tag-values) (usually tag='value').
 
 More than one influxdb1 config entry can be specified to launch cleanup jobs to different influxdb servers. Also more than one job can be configured for each influxdb1 entry.
 

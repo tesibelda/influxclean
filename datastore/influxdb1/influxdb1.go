@@ -80,7 +80,7 @@ func (ic *Influxdb1Client) QueryShowDatabases() ([]string, error) {
 }
 
 // QueryShowTagValues returns all posible values for a tag in the index
-func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, dim1 string) ([]string, error) {
+func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string, error) {
 	var bogus models.Row
 	var q client.Query
 	var response *client.Response
@@ -88,7 +88,10 @@ func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, dim1 string) ([]string,
 	var err error
 
 	// use Sprintf as client.NewQueryWithParameters does not work with all versions
-	query = fmt.Sprintf("SHOW TAG VALUES FROM %s WITH KEY=%s", m, dim1)
+	query = fmt.Sprintf("SHOW TAG VALUES FROM %s WITH KEY=%s", m, d1)
+	if len(f) > 0 {
+		query = fmt.Sprintf("%s WHERE %s", query, f)
+	}
 	q = client.NewQuery(query, db, "")
 	q.RetentionPolicy = rp
 
@@ -105,8 +108,8 @@ func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, dim1 string) ([]string,
 	return rowShowSlice(bogus), err
 }
 
-// Query1Dimension return the list of values for a tag with data in the given time window
-func (ic *Influxdb1Client) Query1Dimension(db, rp, m, p, dim1, rb, re string) ([]string, error) {
+// Query1Dim return the list of values for a tag with data in the given time window
+func (ic *Influxdb1Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]string, error) {
 	var bogus models.Row
 	var q client.Query
 	var response *client.Response
@@ -118,12 +121,16 @@ func (ic *Influxdb1Client) Query1Dimension(db, rp, m, p, dim1, rb, re string) ([
 	if wb == we {
 		cd, _ := time.ParseDuration("0m")
 		if wb == cd {
-			return ic.QueryShowTagValues(db, rp, m, dim1)
+			return ic.QueryShowTagValues(db, rp, m, d1, f)
 		}
 	}
 
 	// use Sprintf as client.NewQueryWithParameters does not work with all versions
-	query = fmt.Sprintf("SELECT %s FROM (SELECT first(%s), %s::tag AS %s FROM %s WHERE (time > now() - %s AND time < now() - %s) GROUP BY %s)", dim1, p, dim1, dim1, m, rb, re, dim1)
+	query = fmt.Sprintf("SELECT %s FROM (SELECT first(%s), %s::tag AS %s FROM %s WHERE (time > now() - %s AND time < now() - %s)", d1, p, d1, d1, m, rb, re)
+	if len(f) > 0 {
+		query = fmt.Sprintf("%s AND %s", query, f)
+	}
+	query = fmt.Sprintf("%s GROUP BY %s)", query, d1)
 	q = client.NewQuery(query, db, "")
 	q.RetentionPolicy = rp
 
@@ -132,7 +139,7 @@ func (ic *Influxdb1Client) Query1Dimension(db, rp, m, p, dim1, rb, re string) ([
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimension %s failed: %s", dim1, response.Error())
+		return nil, fmt.Errorf("Query with dimension %s failed: %s", d1, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -140,27 +147,38 @@ func (ic *Influxdb1Client) Query1Dimension(db, rp, m, p, dim1, rb, re string) ([
 	return rowSelectSlice(bogus), err
 }
 
-// Query2Dimensions return the list of values for the combination of two tags with data
+// Query2Dims return the list of values for the combination of two tags with data
 // in the given time window
-func (ic *Influxdb1Client) Query2Dimensions(db, rp, m, p, dim1, dim2, rb, re string) ([]string, error) {
+func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([]string, error) {
 	var (
-		bogus    models.Row
-		q        client.Query
-		response *client.Response
-		query    string
-		err      error
+		bogus        models.Row
+		q            client.Query
+		response     *client.Response
+		query, where string
+		err          error
 	)
 
-	query = fmt.Sprintf("SELECT %s, %s FROM (SELECT first(%s), %s::tag AS %s, %s::tag AS %s FROM %s WHERE (time > now() - %s AND time < now() - %s) GROUP BY %s, %s)", dim1, dim2, p, dim1, dim1, dim2, dim2, m, rb, re, dim1, dim2)
+	query = fmt.Sprintf("SELECT %s, %s FROM (SELECT first(%s), %s::tag AS %s, %s::tag AS %s FROM %s", d1, d2, p, d1, d1, d2, d2, m)
 
+	where = fmt.Sprintf("(time > now() - %s AND time < now() - %s)", rb, re)
 	wb, _ := time.ParseDuration(rb)
 	we, _ := time.ParseDuration(re)
 	if wb == we {
 		cd, _ := time.ParseDuration("0m")
 		if wb == cd {
-			query = fmt.Sprintf("SELECT %s, %s FROM (SELECT first(%s), %s::tag AS %s, %s::tag AS %s FROM %s GROUP BY %s, %s)", dim1, dim2, p, dim1, dim1, dim2, dim2, m, dim1, dim2)
+			where = ""
 		}
 	}
+	switch len(f) {
+	case 0:
+		if len(where) > 0 {
+			where = fmt.Sprintf("WHERE %s", where)
+		}
+	default:
+		where = fmt.Sprintf("WHERE %s AND %s", where, f)
+	}
+	query = fmt.Sprintf("%s %s GROUP BY %s, %s)", query, where, d1, d2)
+
 	q = client.NewQuery(query, db, "")
 	q.RetentionPolicy = rp
 
@@ -169,7 +187,7 @@ func (ic *Influxdb1Client) Query2Dimensions(db, rp, m, p, dim1, dim2, rb, re str
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimensions %s and %s failed: %s", dim1, dim2, response.Error())
+		return nil, fmt.Errorf("Query with dimensions %s and %s failed: %s", d1, d2, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -177,7 +195,7 @@ func (ic *Influxdb1Client) Query2Dimensions(db, rp, m, p, dim1, dim2, rb, re str
 	return rowSelectSlice(bogus), err
 }
 
-func (ic *Influxdb1Client) DropSeries1Dimension(db, m, dim string, vals []string) error {
+func (ic *Influxdb1Client) DropSeries1Dim(db, m, dim string, vals []string) error {
 	var q client.Query
 	var response *client.Response
 	var query string
@@ -210,7 +228,11 @@ func (ic *Influxdb1Client) DropSeries1Dimension(db, m, dim string, vals []string
 	return err
 }
 
-func (ic *Influxdb1Client) DropSeries2Dimensions(db, m, dim1 string, vals1 []string, dim2 string, vals2 []string) error {
+func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
+	vals1 []string,
+	d2 string,
+	vals2 []string,
+) error {
 	var q client.Query
 	var response *client.Response
 	var query string
@@ -229,7 +251,7 @@ func (ic *Influxdb1Client) DropSeries2Dimensions(db, m, dim1 string, vals1 []str
 		if i > 0 {
 			query = fmt.Sprintf("%s OR", query)
 		}
-		query = fmt.Sprintf("%s (%s='%s' AND %s='%s')", query, dim1, val1, dim2, vals2[i])
+		query = fmt.Sprintf("%s (%s='%s' AND %s='%s')", query, d1, val1, d2, vals2[i])
 	}
 	q = client.NewQuery(query, db, "")
 

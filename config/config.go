@@ -35,6 +35,7 @@ type OldSeriesInfo struct {
 	Rp             string
 	Measurement    string
 	Field          string
+	Filter         string
 	Tags           []string
 	Drop_from_all  bool
 	Sleep_duration string
