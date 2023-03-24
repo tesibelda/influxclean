@@ -9,7 +9,9 @@ More job types may be added in the future.
 **Warning**
 Removal of data from the database cannot be undone. It is strongly suggested to take a backup before using this tool. Be cautius and double-check the results using dry run mode.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tesibelda/influxclean/raw/master/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tesibelda/influxclean/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tesibelda/influxclean)](https://goreportcard.com/report/github.com/tesibelda/influxclean)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/tesibelda/influxclean?display_name=release)
 
 # Compatibility
 
