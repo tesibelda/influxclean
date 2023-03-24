@@ -38,8 +38,8 @@ Currently access to the database is only done using Influxdbv1 API.
     rp = "autogen"
     measurement = "win_system"
     field = "Processor_Queue_Length"
-	# additional filtering clause to use in queries (tag='value')
-	filter = ""
+    # additional filtering clause to use in queries (tag='value')
+    filter = ""
     # tags to detect old series (no more than two)
     tags = ["host"]
     # if drop_from_all is true series are dropped from all
