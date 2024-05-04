@@ -32,7 +32,7 @@ func RunJobs(cfg *config.InfluxCleanConfig, lo *log.Logger, dryrun bool) error {
 func runInfluxdb1Jobs(cfg *config.InfluxCleanConfig, dryrun bool) error {
 	var drywarn string
 	var err, worsterr error
-	var ic = &influxdb1.Influxdb1Client{Log: l}
+	var ic = &influxdb1.Client{Log: l}
 	for _, inf := range cfg.Influxdb1 {
 		switch dryrun {
 		case true:
@@ -40,14 +40,14 @@ func runInfluxdb1Jobs(cfg *config.InfluxCleanConfig, dryrun bool) error {
 		default:
 			drywarn = "with dry run DISABLED"
 		}
-		l.Infof("Connecting to influxdb1 at %s %s", inf.Url, drywarn)
-		err = ic.Open(inf.Url, inf.User, inf.Password, inf.Insecure_skip_verify, dryrun)
+		l.Infof("Connecting to influxdb1 at %s %s", inf.URL, drywarn)
+		err = ic.Open(inf.URL, inf.User, inf.Password, inf.InsecureSkipVerify, dryrun)
 		if err != nil {
-			l.Errorf("Could not connect to influxdb1 %s: %v", inf.Url, err)
+			l.Errorf("Could not connect to influxdb1 %s: %v", inf.URL, err)
 			worsterr = err
 			continue
 		}
-		if err = runInfluxdb1OldSeries(ic, inf, dryrun); err != nil {
+		if err = runInfluxdb1OldSeries(ic, inf); err != nil {
 			worsterr = err
 		}
 		// here more job types in the future (emptydbs,...)

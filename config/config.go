@@ -20,30 +20,30 @@ type InfluxCleanConfig struct {
 }
 
 type Influxdb1Info struct {
-	Url                  string
-	Env_user             string
-	Env_password         string
-	User                 string
-	Password             string
-	Insecure_skip_verify bool
-	Oldseries            []OldSeriesInfo
+	URL                string
+	EnvUser            string
+	EnvPassword        string
+	User               string
+	Password           string
+	InsecureSkipVerify bool
+	Oldseries          []OldSeriesInfo
 }
 
 type OldSeriesInfo struct {
-	Name           string
-	Databases      []string
-	Rp             string
-	Measurement    string
-	Field          string
-	Filter         string
-	Tags           []string
-	Drop_from_all  bool
-	Sleep_duration string
-	History_window []string
-	Current_window []string
+	Name          string
+	Databases     []string
+	Rp            string
+	Measurement   string
+	Field         string
+	Filter        string
+	Tags          []string
+	DropFromAll   bool
+	SleepDuration string
+	HistoryWindow []string
+	CurrentWindow []string
 }
 
-var ErrorString_ParseFailed = "Configuration parse failed"
+var ErrorStringParseFailed = "Configuration parse failed"
 
 func NewInfluxCleanConfig() *InfluxCleanConfig {
 	var c = &InfluxCleanConfig{}
@@ -66,9 +66,9 @@ func (c *InfluxCleanConfig) defaultOldSeriesConfig() {
 	for i := range c.Influxdb1 {
 		for j := range c.Influxdb1[i].Oldseries {
 			var job = &c.Influxdb1[i].Oldseries[j]
-			job.Sleep_duration = defaultDuration(job.Sleep_duration)
-			job.History_window = defaultWindowDuration(job.History_window)
-			job.Current_window = defaultWindowDuration(job.Current_window)
+			job.SleepDuration = defaultDuration(job.SleepDuration)
+			job.HistoryWindow = defaultWindowDuration(job.HistoryWindow)
+			job.CurrentWindow = defaultWindowDuration(job.CurrentWindow)
 		}
 	}
 }
@@ -78,13 +78,13 @@ func (c *InfluxCleanConfig) parseConfig() error {
 	var err error
 
 	for i, inf := range c.Influxdb1 {
-		if len(inf.Env_user) > 0 {
-			c.Influxdb1[i].User = os.Getenv(inf.Env_user)
+		if len(inf.EnvUser) > 0 {
+			c.Influxdb1[i].User = os.Getenv(inf.EnvUser)
 		}
-		if len(inf.Env_password) > 0 {
-			c.Influxdb1[i].Password = os.Getenv(inf.Env_password)
+		if len(inf.EnvPassword) > 0 {
+			c.Influxdb1[i].Password = os.Getenv(inf.EnvPassword)
 		}
-		if err = parseOldSeriesConfig(inf, c); err != nil {
+		if err = parseOldSeriesConfig(inf); err != nil {
 			return err
 		}
 	}
@@ -92,24 +92,22 @@ func (c *InfluxCleanConfig) parseConfig() error {
 }
 
 // parseOldSeriesConfig parses an OldSeries job config
-func parseOldSeriesConfig(inf Influxdb1Info, c *InfluxCleanConfig) error {
+func parseOldSeriesConfig(inf Influxdb1Info) error {
 	var err error
 	for _, job := range inf.Oldseries {
 		if len(job.Tags) == 0 || len(job.Tags) > 2 {
 			return fmt.Errorf("%s. Only one or two tags clean jobs are possible",
-				ErrorString_ParseFailed,
+				ErrorStringParseFailed,
 			)
 		}
-		if _, err = time.ParseDuration(job.Sleep_duration); err != nil {
-			return fmt.Errorf("%s. Sleep_duration field could not be parsed: %v",
-				ErrorString_ParseFailed,
-				err,
-			)
+		if _, err = time.ParseDuration(job.SleepDuration); err != nil {
+			return fmt.Errorf("%s. SleepDuration field could not be parsed: %w",
+				ErrorStringParseFailed, err)
 		}
-		if err = parseWindow(job.History_window, "History"); err != nil {
+		if err = parseWindow(job.HistoryWindow, "History"); err != nil {
 			return err
 		}
-		if err = parseWindow(job.Current_window, "Current"); err != nil {
+		if err = parseWindow(job.CurrentWindow, "Current"); err != nil {
 			return err
 		}
 	}
@@ -122,23 +120,16 @@ func parseWindow(w []string, desc string) error {
 	var err error
 	if len(w) > 2 {
 		return fmt.Errorf("%s. %s and current window should include two durations",
-			ErrorString_ParseFailed,
-			desc,
-		)
+			ErrorStringParseFailed, desc)
 	}
 	for k := 0; k < len(w); k++ {
 		if _, err = time.ParseDuration(w[k]); err != nil {
-			return fmt.Errorf("%s. %s time window could not be parsed: %v",
-				ErrorString_ParseFailed,
-				desc,
-				err,
-			)
+			return fmt.Errorf("%s. %s time window could not be parsed: %w",
+				ErrorStringParseFailed, desc, err)
 		}
 		if k == 1 && t.Seconds() > tf.Seconds() {
 			return fmt.Errorf("%s. %s relative times are not from older to newer",
-				ErrorString_ParseFailed,
-				desc,
-			)
+				ErrorStringParseFailed, desc)
 		}
 		tf = t
 	}

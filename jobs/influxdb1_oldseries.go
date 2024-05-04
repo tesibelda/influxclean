@@ -15,16 +15,15 @@ import (
 
 // runInfluxdb1OldSeries runs all oldseries jobs for influxdb1 databases
 func runInfluxdb1OldSeries(
-	ic *influxdb1.Influxdb1Client,
+	ic *influxdb1.Client,
 	inf config.Influxdb1Info,
-	dryrun bool,
 ) error {
 	var err, lasterr error
 	for _, job := range inf.Oldseries {
 		if len(job.Databases) == 0 {
 			job.Databases, err = ic.QueryShowDatabases()
 			if err != nil {
-				l.Errorf("Error listing databases while runing oldseries job %s: %v",
+				l.Errorf("Error listing databases while running oldseries job %s: %v",
 					job.Name,
 					err,
 				)
@@ -38,7 +37,7 @@ func runInfluxdb1OldSeries(
 			err = runInfl1OldSeries2Dims(ic, job)
 		}
 		if err != nil {
-			l.Errorf("Error runing oldseries job %s: %v", job.Name, err)
+			l.Errorf("Error running oldseries job %s: %v", job.Name, err)
 			lasterr = err
 		}
 	}
@@ -46,7 +45,7 @@ func runInfluxdb1OldSeries(
 }
 
 // runInfl1OldSeries1Dim runs all oldseries job of influxdb1 type and one tag dimension
-func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInfo) error {
+func runInfl1OldSeries1Dim(ic *influxdb1.Client, oc config.OldSeriesInfo) error {
 	var (
 		hdata, cdata, remdata []string
 		tag, m                string
@@ -56,11 +55,11 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 	)
 
 	tag = oc.Tags[0]
-	sl, _ = time.ParseDuration(oc.Sleep_duration)
-	hwb = oc.History_window[0]
-	hwe = oc.History_window[1]
-	cwb = oc.Current_window[0]
-	cwe = oc.Current_window[1]
+	sl, _ = time.ParseDuration(oc.SleepDuration)
+	hwb = oc.HistoryWindow[0]
+	hwe = oc.HistoryWindow[1]
+	cwb = oc.CurrentWindow[0]
+	cwe = oc.CurrentWindow[1]
 	for i, db := range oc.Databases {
 		if i > 0 {
 			time.Sleep(sl)
@@ -87,7 +86,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 			l.Infof("No series where found to drop from %s db", db)
 		default:
 			var about = "About to drop series from"
-			switch oc.Drop_from_all {
+			switch oc.DropFromAll {
 			case true:
 				l.Infof("%s %s db for tag %s with %d values",
 					about,
@@ -106,7 +105,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 			}
 		}
 		for _, ch := range sliceplus.ChunkSlice(remdata, 60) {
-			if oc.Drop_from_all {
+			if oc.DropFromAll {
 				m = ""
 			}
 			if err = ic.DropSeries1Dim(db, m, tag, ch); err != nil {
@@ -119,7 +118,7 @@ func runInfl1OldSeries1Dim(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInf
 }
 
 // runInfl1OldSeries2Dims runs all oldseries job of influxdb1 type and two tag dimensions
-func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesInfo) error {
+func runInfl1OldSeries2Dims(ic *influxdb1.Client, oc config.OldSeriesInfo) error {
 	var (
 		hdata, cdata, remdata []string
 		vals1, vals2          []string
@@ -131,11 +130,11 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 
 	tag1 = oc.Tags[0]
 	tag2 = oc.Tags[1]
-	sl, _ = time.ParseDuration(oc.Sleep_duration)
-	hwb = oc.History_window[0]
-	hwe = oc.History_window[1]
-	cwb = oc.Current_window[0]
-	cwe = oc.Current_window[1]
+	sl, _ = time.ParseDuration(oc.SleepDuration)
+	hwb = oc.HistoryWindow[0]
+	hwe = oc.HistoryWindow[1]
+	cwb = oc.CurrentWindow[0]
+	cwe = oc.CurrentWindow[1]
 	for i, db := range oc.Databases {
 		if i > 0 {
 			time.Sleep(sl)
@@ -162,7 +161,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 			l.Infof("No series where found to drop from %s db", db)
 		default:
 			var about = "About to drop series from"
-			switch oc.Drop_from_all {
+			switch oc.DropFromAll {
 			case true:
 				l.Infof("%s %s db for tags %s and %s with %d values",
 					about,
@@ -184,7 +183,7 @@ func runInfl1OldSeries2Dims(ic *influxdb1.Influxdb1Client, oc config.OldSeriesIn
 		}
 
 		for _, ch := range sliceplus.ChunkSlice(remdata, 40) {
-			if oc.Drop_from_all {
+			if oc.DropFromAll {
 				m = ""
 			}
 			vals1, vals2 = sliceplus.Split2Dims(ch, influxdb1.Separator)

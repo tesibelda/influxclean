@@ -6,7 +6,9 @@
 package influxdb1
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb1-client/models"
@@ -15,7 +17,7 @@ import (
 	"github.com/tesibelda/influxclean/log"
 )
 
-type Influxdb1Client struct {
+type Client struct {
 	con    client.Client
 	Log    *log.Logger
 	url    string
@@ -26,7 +28,7 @@ type Influxdb1Client struct {
 var Separator = "#"
 
 // Open opens a connection to the provided influxdb1
-func (ic *Influxdb1Client) Open(url, user, password string, skip bool, dry bool) error {
+func (ic *Client) Open(url, user, password string, skip bool, dry bool) error {
 	var err error
 	var conf = client.HTTPConfig{
 		Addr:               url,
@@ -52,13 +54,13 @@ func (ic *Influxdb1Client) Open(url, user, password string, skip bool, dry bool)
 }
 
 // Close closes the opened connection
-func (ic *Influxdb1Client) Close() {
+func (ic *Client) Close() {
 	ic.con.Close()
 	ic.con = nil
 }
 
 // QueryShowDatabases returns the list of database names
-func (ic *Influxdb1Client) QueryShowDatabases() ([]string, error) {
+func (ic *Client) QueryShowDatabases() ([]string, error) {
 	var bogus models.Row
 	var q client.Query
 	var response *client.Response
@@ -71,7 +73,7 @@ func (ic *Influxdb1Client) QueryShowDatabases() ([]string, error) {
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query show databases failed: %s", response.Error())
+		return nil, fmt.Errorf("Query show databases failed: %w", response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -80,7 +82,7 @@ func (ic *Influxdb1Client) QueryShowDatabases() ([]string, error) {
 }
 
 // QueryShowTagValues returns all posible values for a tag in the index
-func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string, error) {
+func (ic *Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string, error) {
 	var bogus models.Row
 	var q client.Query
 	var response *client.Response
@@ -100,7 +102,7 @@ func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query show tag values failed: %s", response.Error())
+		return nil, fmt.Errorf("Query show tag values failed: %w", response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -109,7 +111,7 @@ func (ic *Influxdb1Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string
 }
 
 // Query1Dim return the list of values for a tag with data in the given time window
-func (ic *Influxdb1Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]string, error) {
+func (ic *Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]string, error) {
 	var bogus models.Row
 	var q client.Query
 	var response *client.Response
@@ -126,7 +128,9 @@ func (ic *Influxdb1Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]stri
 	}
 
 	// use Sprintf as client.NewQueryWithParameters does not work with all versions
-	query = fmt.Sprintf("SELECT %s FROM (SELECT first(%s), %s::tag AS %s FROM %s WHERE (time > now() - %s AND time < now() - %s)", d1, p, d1, d1, m, rb, re)
+	query = fmt.Sprintf(
+		"SELECT %s FROM (SELECT first(%s), %s::tag AS %s FROM %s WHERE (time > now() - %s AND time < now() - %s)",
+		d1, p, d1, d1, m, rb, re)
 	if len(f) > 0 {
 		query = fmt.Sprintf("%s AND %s", query, f)
 	}
@@ -139,7 +143,7 @@ func (ic *Influxdb1Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]stri
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimension %s failed: %s", d1, response.Error())
+		return nil, fmt.Errorf("Query with dimension %s failed: %w", d1, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -149,7 +153,7 @@ func (ic *Influxdb1Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]stri
 
 // Query2Dims return the list of values for the combination of two tags with data
 // in the given time window
-func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([]string, error) {
+func (ic *Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([]string, error) {
 	var (
 		bogus        models.Row
 		q            client.Query
@@ -158,7 +162,8 @@ func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([
 		err          error
 	)
 
-	query = fmt.Sprintf("SELECT %s, %s FROM (SELECT first(%s), %s::tag AS %s, %s::tag AS %s FROM %s", d1, d2, p, d1, d1, d2, d2, m)
+	query = fmt.Sprintf("SELECT %s, %s FROM (SELECT first(%s), %s::tag AS %s, %s::tag AS %s FROM %s",
+		d1, d2, p, d1, d1, d2, d2, m)
 
 	where = fmt.Sprintf("(time > now() - %s AND time < now() - %s)", rb, re)
 	wb, _ := time.ParseDuration(rb)
@@ -172,7 +177,7 @@ func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([
 	switch len(f) {
 	case 0:
 		if len(where) > 0 {
-			where = fmt.Sprintf("WHERE %s", where)
+			where = strings.Join([]string{"WHERE", where}, " ")
 		}
 	default:
 		where = fmt.Sprintf("WHERE %s AND %s", where, f)
@@ -187,7 +192,7 @@ func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimensions %s and %s failed: %s", d1, d2, response.Error())
+		return nil, fmt.Errorf("Query with dimensions %s and %s failed: %w", d1, d2, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -195,7 +200,7 @@ func (ic *Influxdb1Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([
 	return rowSelectSlice(bogus), err
 }
 
-func (ic *Influxdb1Client) DropSeries1Dim(db, m, dim string, vals []string) error {
+func (ic *Client) DropSeries1Dim(db, m, dim string, vals []string) error {
 	var q client.Query
 	var response *client.Response
 	var query string
@@ -209,7 +214,7 @@ func (ic *Influxdb1Client) DropSeries1Dim(db, m, dim string, vals []string) erro
 	}
 	for i, val := range vals {
 		if i > 0 {
-			query = fmt.Sprintf("%s OR", query)
+			query = strings.Join([]string{query, "OR"}, " ")
 		}
 		query = fmt.Sprintf("%s %s='%s'", query, dim, val)
 	}
@@ -220,7 +225,7 @@ func (ic *Influxdb1Client) DropSeries1Dim(db, m, dim string, vals []string) erro
 	case false:
 		response, err = ic.con.Query(q)
 		if err == nil && response.Error() != nil {
-			return fmt.Errorf("Dropping series failed: %s", response.Error())
+			return fmt.Errorf("Dropping series failed: %w", response.Error())
 		}
 	case true:
 		ic.Log.Debug("dryrun mode on, drops skipped")
@@ -228,7 +233,7 @@ func (ic *Influxdb1Client) DropSeries1Dim(db, m, dim string, vals []string) erro
 	return err
 }
 
-func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
+func (ic *Client) DropSeries2Dims(db, m, d1 string,
 	vals1 []string,
 	d2 string,
 	vals2 []string,
@@ -239,7 +244,7 @@ func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
 	var err error
 
 	if len(vals1) != len(vals2) {
-		return fmt.Errorf("Received different size lists for the two tag values")
+		return errors.New("Received different size lists for the two tag values")
 	}
 	switch len(m) {
 	case 0:
@@ -249,7 +254,7 @@ func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
 	}
 	for i, val1 := range vals1 {
 		if i > 0 {
-			query = fmt.Sprintf("%s OR", query)
+			query = strings.Join([]string{query, "OR"}, " ")
 		}
 		query = fmt.Sprintf("%s (%s='%s' AND %s='%s')", query, d1, val1, d2, vals2[i])
 	}
@@ -260,7 +265,7 @@ func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
 	case false:
 		response, err = ic.con.Query(q)
 		if err == nil && response.Error() != nil {
-			return fmt.Errorf("Dropping series failed: %s", response.Error())
+			return fmt.Errorf("Dropping series failed: %w", response.Error())
 		}
 	case true:
 		ic.Log.Debug("dryrun mode on, drop skipped")
@@ -270,11 +275,10 @@ func (ic *Influxdb1Client) DropSeries2Dims(db, m, d1 string,
 
 func rowShowSlice(row models.Row) []string {
 	var data []string
-	var record, col string
+	var record string
 	for _, point := range row.Values {
 		for j, column := range row.Columns {
-			col = string(column)
-			if col == "value" || col == "name" {
+			if column == "value" || column == "name" {
 				record = point[j].(string)
 			}
 		}
@@ -290,7 +294,7 @@ func rowSelectSlice(row models.Row) []string {
 	var record string
 	for _, point := range row.Values {
 		for j, column := range row.Columns {
-			if string(column) != "time" && point[j] != nil {
+			if column != "time" && point[j] != nil {
 				var actual = point[j].(string)
 				switch len(record) {
 				case 0:

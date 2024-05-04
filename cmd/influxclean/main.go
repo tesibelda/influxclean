@@ -15,7 +15,7 @@ import (
 	"github.com/tesibelda/influxclean/log"
 )
 
-var Version string = ""
+var Version string
 
 func main() {
 	var (
