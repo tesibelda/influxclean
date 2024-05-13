@@ -180,7 +180,11 @@ func (ic *Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([]string, 
 			where = strings.Join([]string{"WHERE", where}, " ")
 		}
 	default:
-		where = fmt.Sprintf("WHERE %s AND %s", where, f)
+		if len(where) > 0 {
+			where = fmt.Sprintf("WHERE %s AND %s", where, f)
+		} else {
+			where = strings.Join([]string{"WHERE", f}, " ")
+		}
 	}
 	query = fmt.Sprintf("%s %s GROUP BY %s, %s)", query, where, d1, d2)
 
