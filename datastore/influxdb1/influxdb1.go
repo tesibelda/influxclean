@@ -220,7 +220,7 @@ func (ic *Client) DropSeries1Dim(db, m, dim string, vals []string) error {
 		if i > 0 {
 			query = strings.Join([]string{query, "OR"}, " ")
 		}
-		query = fmt.Sprintf("%s %s='%s'", query, dim, val)
+		query = fmt.Sprintf("%s %s::tag='%s'", query, dim, val)
 	}
 	q = client.NewQuery(query, db, "")
 
@@ -260,7 +260,7 @@ func (ic *Client) DropSeries2Dims(db, m, d1 string,
 		if i > 0 {
 			query = strings.Join([]string{query, "OR"}, " ")
 		}
-		query = fmt.Sprintf("%s (%s='%s' AND %s='%s')", query, d1, val1, d2, vals2[i])
+		query = fmt.Sprintf("%s (%s::tag='%s' AND %s::tag='%s')", query, d1, val1, d2, vals2[i])
 	}
 	q = client.NewQuery(query, db, "")
 
