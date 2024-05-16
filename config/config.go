@@ -21,11 +21,11 @@ type InfluxCleanConfig struct {
 
 type Influxdb1Info struct {
 	URL                string
-	EnvUser            string
-	EnvPassword        string
-	User               string
-	Password           string
-	InsecureSkipVerify bool
+	EnvUser            string `toml:"env_user"`
+	EnvPassword        string `toml:"env_password"`
+	User               string `toml:"user"`
+	Password           string `toml:"password"`
+	InsecureSkipVerify bool   `toml:"insecure_skip_verify"`
 	TLSServerName      string `toml:"tls_server_name"`
 	Oldseries          []OldSeriesInfo
 }
