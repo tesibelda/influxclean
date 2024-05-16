@@ -30,6 +30,7 @@ Currently access to the database is only done using Influxdbv1 API.
   password = ""
   ## Use TLS but skip chain & host verification (default false)
   insecure_skip_verify = false
+  # tls_server_name = ""
   # drop series from all measurements for Windows servers
   # with no win_system data in telegraf db for three days (72h)
   [[influxdb1.oldseries]]

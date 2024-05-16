@@ -41,7 +41,7 @@ func runInfluxdb1Jobs(cfg *config.InfluxCleanConfig, dryrun bool) error {
 			drywarn = "with dry run DISABLED"
 		}
 		l.Infof("Connecting to influxdb1 at %s %s", inf.URL, drywarn)
-		err = ic.Open(inf.URL, inf.User, inf.Password, inf.InsecureSkipVerify, dryrun)
+		err = ic.Open(inf.URL, inf.User, inf.Password, inf.InsecureSkipVerify, inf.TLSServerName, dryrun)
 		if err != nil {
 			l.Errorf("Could not connect to influxdb1 %s: %v", inf.URL, err)
 			worsterr = err

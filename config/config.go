@@ -26,6 +26,7 @@ type Influxdb1Info struct {
 	User               string
 	Password           string
 	InsecureSkipVerify bool
+	TLSServerName      string `toml:"tls_server_name"`
 	Oldseries          []OldSeriesInfo
 }
 

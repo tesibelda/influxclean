@@ -6,6 +6,7 @@
 package influxdb1
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"strings"
@@ -28,13 +29,17 @@ type Client struct {
 var Separator = "#"
 
 // Open opens a connection to the provided influxdb1
-func (ic *Client) Open(url, user, password string, skip bool, dry bool) error {
+func (ic *Client) Open(url, user, password string, skip bool, servername string, dry bool) error {
 	var err error
 	var conf = client.HTTPConfig{
 		Addr:               url,
 		Username:           user,
 		Password:           password,
 		InsecureSkipVerify: skip,
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: skip, //nolint: gosec
+			ServerName:         servername,
+		},
 	}
 
 	ic.url = url
