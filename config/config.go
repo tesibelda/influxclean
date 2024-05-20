@@ -38,10 +38,10 @@ type OldSeriesInfo struct {
 	Field         string
 	Filter        string
 	Tags          []string
-	DropFromAll   bool
-	SleepDuration string
-	HistoryWindow []string
-	CurrentWindow []string
+	DropFromAll   bool     `toml:"drop_from_all"`
+	SleepDuration string   `toml:"sleep_duration"`
+	HistoryWindow []string `toml:"history_window"`
+	CurrentWindow []string `toml:"current_window"`
 }
 
 var ErrorStringParseFailed = "Configuration parse failed"
