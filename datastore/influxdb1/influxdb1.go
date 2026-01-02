@@ -78,7 +78,7 @@ func (ic *Client) QueryShowDatabases() ([]string, error) {
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query show databases failed: %w", response.Error())
+		return nil, fmt.Errorf("query show databases failed: %w", response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -107,7 +107,7 @@ func (ic *Client) QueryShowTagValues(db, rp, m, d1, f string) ([]string, error) 
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query show tag values failed: %w", response.Error())
+		return nil, fmt.Errorf("query show tag values failed: %w", response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -148,7 +148,7 @@ func (ic *Client) Query1Dim(db, rp, m, p, d1, f, rb, re string) ([]string, error
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimension %s failed: %w", d1, response.Error())
+		return nil, fmt.Errorf("query with dimension %s failed: %w", d1, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -201,7 +201,7 @@ func (ic *Client) Query2Dims(db, rp, m, p, d1, d2, f, rb, re string) ([]string, 
 		return nil, err
 	}
 	if response.Error() != nil {
-		return nil, fmt.Errorf("Query with dimensions %s and %s failed: %w", d1, d2, response.Error())
+		return nil, fmt.Errorf("query with dimensions %s and %s failed: %w", d1, d2, response.Error())
 	}
 	if len(response.Results[0].Series) > 0 {
 		bogus = response.Results[0].Series[0]
@@ -234,7 +234,7 @@ func (ic *Client) DropSeries1Dim(db, m, dim string, vals []string) error {
 	case false:
 		response, err = ic.con.Query(q)
 		if err == nil && response.Error() != nil {
-			return fmt.Errorf("Dropping series failed: %w", response.Error())
+			return fmt.Errorf("dropping series failed: %w", response.Error())
 		}
 	case true:
 		ic.Log.Debug("dryrun mode on, drops skipped")
@@ -253,7 +253,7 @@ func (ic *Client) DropSeries2Dims(db, m, d1 string,
 	var err error
 
 	if len(vals1) != len(vals2) {
-		return errors.New("Received different size lists for the two tag values")
+		return errors.New("received different size lists for the two tag values")
 	}
 	switch len(m) {
 	case 0:
@@ -274,7 +274,7 @@ func (ic *Client) DropSeries2Dims(db, m, d1 string,
 	case false:
 		response, err = ic.con.Query(q)
 		if err == nil && response.Error() != nil {
-			return fmt.Errorf("Dropping series failed: %w", response.Error())
+			return fmt.Errorf("dropping series failed: %w", response.Error())
 		}
 	case true:
 		ic.Log.Debug("dryrun mode on, drop skipped")
